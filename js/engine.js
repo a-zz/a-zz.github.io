@@ -159,6 +159,7 @@ function renderSiteMap(selectedTag) {
 	var tagList = getSiteTagList();	
 	var cntntHTML  = '';
 	cntntHTML += '<div class="cntnr-tags"><h2>All contents by: Tags</h2>';
+	cntntHTML += '<a href="index.html?~map" class="tag">(all)</a>';
 	for(var i = 0; i<tagList.length; i++)
 		cntntHTML += renderTag(tagList[i], tagList[i]==selectedTag, true);
 	cntntHTML += '</div>';
