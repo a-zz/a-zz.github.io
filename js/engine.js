@@ -8,8 +8,9 @@ function start() {
 	addSiteMeta();
 	renderHeader();
 	renderFooter();
-	navigate();
+	var currentPageId = navigate();
 	addEventListeners();
+    start3rdPartyComponents(currentPageId);
 }
 
 // Add site metadata
@@ -49,14 +50,23 @@ function navigate() {
 	else
 		pageId = site.indexpage;
 	
+    var currentPageId = null;
 	if(pageId.startsWith('~map'))	// --> Map: all pages
 		renderSiteMap(pageId.substring(5));
-	else if(pageId=='~last')		// --> Last: last page added
-		renderPage(findLastPage());
-	else if(pageId=='~random')		// --> Random page
-		renderPage(randomPage());
-	else							// --> Selected page
+	else if(pageId=='~last') {		// --> Last: last page added
+        currentPageId = findLastPage();
+		renderPage(currentPageId);
+    }
+	else if(pageId=='~random') {	// --> Random page
+        currentPageId = randomPage();
+		renderPage(currentPageId);
+    }
+	else {							// --> Selected page
+        currentPageId = pageId;
 		renderPage(pageId, anchor);
+    }
+    
+    return currentPageId;
 }
 
 /* ** Content-rendering functions ******************************************* */
@@ -86,10 +96,10 @@ function renderHeader() {
 	hdrmenu.innerHTML = innerHTML;
 }
 
-//Renders the site footer (not too much to show).
-//Arguments: 
-//	(none)
-//Returns:
+// Renders the site footer (not too much to show).
+// Arguments: 
+//  (none)
+// Returns:
 //	(nothing)
 function renderFooter() {
 	
@@ -98,7 +108,9 @@ function renderFooter() {
 	ftr.innerHTML = '<a href="index.html">' + site.name + ' :: ' + site.description + '</a>, ' + lastUpdateYear();
 }
 
-// Render a content page
+// Render a content page. If the content has a Javascript function 
+//  startContentScript(), it'll be invoked just afterwards, so per-page
+//  content-specific scripts may be added.
 // Arguments:
 //	pageId (String) The page to load, referred by its id (field pageid in 
 //		metadata.json > site > pages).
@@ -122,8 +134,16 @@ function renderPage(pageId, anchor) {
 	var xhttp = new XMLHttpRequest();
 	xhttp.onreadystatechange = function() {
 		if(this.readyState == 4 && this.status == 200) 
-            if(page.content.endsWith('.html'))
-                showHtmlContent(document.getElementById("cntnr-html"), this.responseText, anchor);
+            if(page.content.endsWith('.html')) {
+                showHtmlContent(document.getElementById("cntnr-html"), this.responseText, anchor);                
+                window.document.getElementById('cntnr-html').querySelectorAll('script').forEach((contentScript) => {
+                    var pageScript = document.createElement('script');
+                    pageScript.appendChild(document.createTextNode(contentScript.text));
+                    window.document.body.appendChild(pageScript);
+                });
+                if(typeof startContentScript === 'function')
+                startContentScript();                                
+            }
             else if(page.content.endsWith('.md'))
                 showMdContent(document.getElementById("cntnr-html"), this.responseText);
 	};
@@ -354,6 +374,12 @@ function getSiteHistory(selectedTag) {
 	return history;
 }
 
+// Returns the (content's) last update year (i.e. the year of the last content
+//  page, as set by page.date)
+// Arguments:
+//  (none)
+// Returns:
+//  (Integer) The year of the last content page
 function lastUpdateYear() {
 	
 	var currentYear = new Date().getFullYear();
@@ -384,9 +410,32 @@ function formatDate(date) {
 		   date.substring(10);
 }
 
+// Returns the canonical URL for a certain pageId, needed by some 3rd party
+//  components
+// Arguments:
+//	pageId (String) The pageId
+// Returns:
+//  (String) The canonical URL for the page
+
+function getCanonicalUrl(pageId) {
+      
+    if(pageId!=null) {
+        var url = window.location.href;
+        url = url.substring(0, url.lastIndexOf('/')) + '/index.html?' + pageId;
+        return url;
+    }
+    else
+        return null;
+}
+
 /* ** Event handling ******************************************************** */
 function addEventListeners() {
 
 	// (currently none)
+}
+
+/* ** 3rd party components ************************************************** */
+function start3rdPartyComponents(currentPageId) {
+    
 }
 /* ************************************************************************** */

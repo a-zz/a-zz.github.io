@@ -1,4 +1,4 @@
-# Content 4
+# Sample (and simple) page 4 (MD-formatted)
 
 This is a sample of MD content rendered as HTML by [remarkable.js](https://github.com/jonschlinkert/remarkable).
 
