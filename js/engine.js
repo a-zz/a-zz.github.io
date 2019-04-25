@@ -122,15 +122,22 @@ function renderPage(pageId, anchor) {
 	var xhttp = new XMLHttpRequest();
 	xhttp.onreadystatechange = function() {
 		if(this.readyState == 4 && this.status == 200) 
-			showContent(document.getElementById("cntnr-html"), this.responseText, anchor);
+            if(page.content.endsWith('.html'))
+                showHtmlContent(document.getElementById("cntnr-html"), this.responseText, anchor);
+            else if(page.content.endsWith('.md'))
+                showMdContent(document.getElementById("cntnr-html"), this.responseText);
 	};
-	xhttp.open("GET", 'content/html/' + page.content, true);
+    if(page.content.endsWith('.html'))
+        xhttp.open("GET", 'content/html/' + page.content, true);
+    else if(page.content.endsWith('.md'))
+        xhttp.open("GET", 'content/md/' + page.content, true);
 	xhttp.send();
 }
 
 // Writes the HTML content to target DIV
 // Arguments:
 //	target (HTMLDivElement) The DIV element to write the content to
+//  content (String) The HTML content to be written
 //	anchor (String) Local anchor (#something) within the content.
 //		Needed as local-link handling isn't clear, or seems to be not completely 
 //		coherent (unless on Firefox Developer Edition 65). They seem to work
@@ -138,13 +145,39 @@ function renderPage(pageId, anchor) {
 //		will be scrolling by javascript to the local anchor offset when needed.
 // Returns:
 //	(nothing)
-function showContent(target, content, anchor) {
+function showHtmlContent(target, content, anchor) {
 	
 	target.innerHTML = content;
 	if(anchor!=null) {
 		// TODO Find anchor offset within content and scroll
 	}
 }
+
+// Renders MD content as HTML and writes it to target DIV
+// Arguments:
+//	target (HTMLDivElement) The DIV element to write the content to
+//  content (String) The MD content to be conversed and written
+//	anchor (String) Local anchor (#something) within the content.
+//		Needed as local-link handling isn't clear, or seems to be not completely 
+//		coherent (unless on Firefox Developer Edition 65). They seem to work
+//		fine when first loaded, but not always on page reload. To avoid that we
+//		will be scrolling by javascript to the local anchor offset when needed.
+// Returns:
+//	(nothing)
+function showMdContent(target, content) {
+    
+    var xhttp = new XMLHttpRequest();
+	xhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			eval(this.responseText);
+                var md = new Remarkable();
+                var html = md.render(content);
+                showHtmlContent(target, html, null);
+		}
+	};
+	xhttp.open("GET", 'js/remarkable.min.js', true);
+	xhttp.send();
+}    
 
 // Render the site map
 // Arguments:
